@@ -3,10 +3,27 @@ import axios from "axios";
 import { useAuth0 } from "@auth0/auth0-react";
 import { BACKEND_URL } from "../constants";
 import { useNavigate, useParams } from "react-router-dom";
-
+import {
+  ref as sRef,
+  getDownloadURL,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { ref as dbRef, update } from "firebase/database";
+import { database, storage } from "../firebase";
 import { Link } from "react-router-dom";
 import { UserContext } from "../App";
-import { Stack, TextField, Typography } from "@mui/material";
+import {
+  Stack,
+  TextField,
+  Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from "@mui/material";
+import { MuiFileInput } from "mui-file-input";
+
 /* import Typography from '@mui/joy/Typography'; */
 /* import Card from "@mui/joy/Card"; */
 import { styled } from "@mui/material/styles";
@@ -17,19 +34,34 @@ import Button from "@mui/material/Button";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+
 // import Select from "@mui/material/Select";
 import Select from "react-select";
 import { toast } from "react-toastify";
 import NavBar from "./NavBar";
 
 const CreateListing = () => {
+  // FOR NAVIGATION:
   const navigate = useNavigate();
+  //
+  // FOR AUTH0:
   const { isAuthenticated, user, isLoading } = useAuth0();
+  //
+  // FOR GETTING ACCESS TOKEN FROM LOCAL STORAGE:
   const accessToken = localStorage.getItem("accessToken");
+  //
+  // LOCAL STATES FOR IMAGE SUBMISSION:
+  const [openModal, setOpenModal] = useState(false);
+  const [file, setFile] = useState([]);
+  const [fileErrorText, setFileErrorText] = useState("");
+  //
 
+  // LOCAL STATES FOR CATEGORIES SUBMISSION:
   const [allCategories, setAllCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  //
 
+  // LOCAL STATES FOR LISTINGS FORM SUBMISSION:
   const [state, setState] = useState({
     user_id: "",
     title: "",
@@ -152,7 +184,7 @@ const CreateListing = () => {
     return console.log("you've submitted user info!");
   };
 
-  // Handle Change for field inputs:
+  // Handle Change for general field inputs (NOT FOR CATEGORIES INPUT):
   const handleChange = (e) => {
     setState({ ...state, [e.target.id]: e.target.value });
     console.log(state);
@@ -175,7 +207,7 @@ const CreateListing = () => {
   }, []);
 
   console.log("all categories in local state:", allCategories);
-  // categoryOptions for Category form input selection:
+  // categoryOptions for mapping out Category selection inputs to render:
   const categoryOptions = allCategories.map((category) => ({
     value: category.id,
     label: category.name,
@@ -192,7 +224,59 @@ const CreateListing = () => {
       color: "black",
     }),
   };
+  //
+  //
 
+  // LOGIC REQUIRED FOR SUBMISSION OF PHOTOS:
+
+  const uploadFile = async (files, postKey) => {
+    if (files == null) return 0;
+
+    let images = {};
+
+    await Promise.all(
+      files.map(async (image, index) => {
+        const imageRef = sRef(
+          storage,
+          `images/${postKey}/${crypto.randomUUID() + image.name}`
+        );
+        await uploadBytesResumable(imageRef, image);
+        let imageURL = await getDownloadURL(imageRef);
+        images[crypto.randomUUID()] = imageURL;
+      })
+    );
+    console.log(images);
+    return images;
+  };
+
+  const handleFileChange = (newFile) => {
+    setFileErrorText("");
+    setFile(newFile);
+    console.log(file);
+  };
+
+  const handleImageSubmit = async () => {
+    console.log(file);
+
+    // const imagesRef = dbRef(database, `posts/images`);
+    // const images = await uploadFile(file, selectedPost.key);
+    // let updates = { ...selectedPost.images, ...images };
+    // console.log(updates);
+
+    // await toast.promise(update(imagesRef, updates), {
+    //   pending: `Uploading photos 🤩`,
+    //   success: "Successfully uploaded photos! 👌",
+    //   error: "An error occurred... 🤯",
+    // });
+
+    setFile([]);
+  };
+
+  //
+  //
+  //
+
+  // IF PAGE IS LOADING.... THIS WILL RENDER:
   if (isLoading) {
     // Show loading state
     return (
@@ -340,6 +424,30 @@ const CreateListing = () => {
           </form>
           <br />
         </>
+        <Dialog open={openModal} onClose={() => setOpenModal(false)}>
+          <DialogTitle id="alert-dialog-title">Add new photos</DialogTitle>
+          <DialogContent>
+            <MuiFileInput
+              size="small"
+              value={file}
+              onChange={handleFileChange}
+              placeholder="Click here to choose images"
+              multiple
+              helperText={
+                fileErrorText
+                  ? fileErrorText
+                  : "You can choose to upload multiple images!"
+              }
+              error={fileErrorText ? true : false}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleImageSubmit}>Confirm</Button>
+            <Button onClick={() => setOpenModal(false)} autoFocus>
+              Cancel
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Stack>
     </div>
   );
