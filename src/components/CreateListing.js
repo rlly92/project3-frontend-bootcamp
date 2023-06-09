@@ -24,8 +24,6 @@ import {
 } from "@mui/material";
 import { MuiFileInput } from "mui-file-input";
 
-/* import Typography from '@mui/joy/Typography'; */
-/* import Card from "@mui/joy/Card"; */
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -37,7 +35,8 @@ import FormControl from "@mui/material/FormControl";
 
 // import Select from "@mui/material/Select";
 import Select from "react-select";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import NavBar from "./NavBar";
 
 const CreateListing = () => {
@@ -114,10 +113,11 @@ const CreateListing = () => {
 
   console.log("state.user_id:", state.user_id);
 
-  // LOGIC FOR SUBMIT BUTTON:
+  // ALL THE LOGIC FOR SUBMIT BUTTON TO SUBMIT ALL THE DATA TO BACKEND:
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    // Show loading toast message
+    toast.info("Submitting form...", { autoClose: false });
     // Extract category IDs to send to backend
     const selectedCategoryIDs = selectedCategories.map(({ value }) => value);
     console.log(selectedCategoryIDs);
@@ -143,16 +143,6 @@ const CreateListing = () => {
       fileURLs.push(downloadURL3);
     }
 
-    // Upload files to Firebase Storage
-    //
-    // const fileURLs = [];
-    // for (let i = 0; i < file.length && i < 3; i++) {
-    //   const storageRef = sRef(storage, `photos/${file[i].name}`);
-    //   await uploadBytesResumable(storageRef, file[i]);
-    //   const downloadURL = await getDownloadURL(storageRef);
-    //   fileURLs.push(downloadURL);
-    // }
-
     // Perform form submission actions to the backend:
     axios
       .post(
@@ -176,7 +166,10 @@ const CreateListing = () => {
           },
         }
       )
+
       .then((res) => {
+        // Show success toast message
+        toast.success("Form submitted successfully!");
         setState({
           user_id: "",
           title: "",
@@ -195,6 +188,8 @@ const CreateListing = () => {
       })
       .catch((error) => {
         console.log(error);
+        // Show error toast message
+        toast.error("Error submitting form. Please try again.");
       });
 
     return console.log("you've submitted user info!");
@@ -217,6 +212,7 @@ const CreateListing = () => {
   }, []);
 
   console.log("all categories in local state:", allCategories);
+  //
   // categoryOptions for mapping out Category selection inputs to render:
   const categoryOptions = allCategories.map((category) => ({
     value: category.id,
@@ -237,7 +233,7 @@ const CreateListing = () => {
   //
   //
 
-  // LOGIC REQUIRED FOR HANDLING CHANGE OF PHOTO FILES AND FORM INPUTS:
+  // LOGIC REQUIRED FOR HANDLING CHANGE OF PHOTO FILES AND FORM INPUTS (NOT INCLUDING CATEGORIES):
 
   // Handle Change for general field inputs (NOT FOR CATEGORIES INPUT):
   const handleChange = (e) => {
@@ -245,7 +241,7 @@ const CreateListing = () => {
     console.log(state);
   };
 
-  // Handle File Change for each MuiFileInput field
+  // Handle File Change for each MuiFileInput field (FOR THE IMAGES):
   const handleFileChange1 = (newFile) => {
     setFileErrorText("");
     setFile1(newFile);
@@ -264,16 +260,6 @@ const CreateListing = () => {
     console.log("file3:", file3);
   };
 
-  // const handleFileChange = (newFile) => {
-  //   setFileErrorText("");
-  //   setFile(newFile);
-  //   console.log(file);
-  // };
-
-  //
-  //
-  //
-
   // IF PAGE IS LOADING.... THIS WILL RENDER:
   if (isLoading) {
     // Show loading state
@@ -287,6 +273,7 @@ const CreateListing = () => {
   return (
     <div>
       <NavBar />
+
       <Stack alignItems={"center"} justifyContent={"center"} my={5}>
         <>
           <Box m={2} p={2}>
@@ -427,6 +414,7 @@ const CreateListing = () => {
               <Button type="submit" variant="contained">
                 SUBMIT YOUR LISTING
               </Button>
+              <ToastContainer />
             </Stack>
           </form>
           <br />

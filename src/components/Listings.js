@@ -43,6 +43,7 @@ const Listings = () => {
     useAuth0();
   const navigate = useNavigate();
   const [state, setState] = useState({ email: "" });
+  const [listings, setListings] = useState({ listings: [] });
   const accessToken = localStorage.getItem("accessToken");
 
   // GET TOKEN AND EMAIL ON MOUNT:
@@ -105,6 +106,32 @@ const Listings = () => {
     checkUserInfoExists();
   }, [state?.email, accessToken]);
 
+  // THIS USEFFECT BLOCK IS FOR LOADING OUT ALL THE LISTINGS:
+  useEffect(() => {
+    const loadAllListings = async () => {
+      try {
+        const getAllListings = await axios.get(`${BACKEND_URL}/listings`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        console.log("getAllListings.data:", getAllListings.data);
+        if (getAllListings.data) {
+          // if the listings exist in the db(they normally would), store the listings data in the local state of listings:
+          await setListings(getAllListings.data);
+        }
+      } catch (error) {
+        console.error(
+          "Error occurred while checking user info exists on db:",
+          error
+        );
+      }
+    };
+    loadAllListings();
+  }, []);
+  console.log("listings:", listings);
+
   if (isLoading) {
     // Show loading state
     return (
@@ -121,7 +148,7 @@ const Listings = () => {
     ></Box>
   );
 
-  return isAuthenticated ? (
+  return isAuthenticated && listings ? (
     <div>
       <NavBar />
       <br />
@@ -130,36 +157,45 @@ const Listings = () => {
 
       <br />
 
-      {/* <Box sx={{ width: '100%' }}>
-        <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }} >
-          {
-            data.map((prod) => {
-              return (
-                <>
-                  <Grid item xs={4}>
-                    <Card sx={{ minWidth: 275 }}>
-                      <CardContent>
-                        <Typography>
-                          <strong className="prod_title">{prod.prod_title}</strong>
-                        </Typography>
-                        <Typography>
-                          <p className="prod_price">{prod.prod_price}</p>
-                        </Typography>
-                        <Typography>
-                          <p className="prod_qty">Quantity : {prod.prod_quantity}</p>
-                        </Typography>
-                      </CardContent>
-                      <CardActions>
-                        <Button variant="outlined" className="add-2cart">Add to Cart</Button>
-                      </CardActions>
-                    </Card>
-                  </Grid>
-                </>
-              )
-            })
-          }
+      {listings.length > 0 ? (
+        <Grid container spacing={2}>
+          {listings.map((listing) => (
+            <Grid item xs={12} sm={6} md={4} key={listing.id}>
+              <Card>
+                <CardMedia
+                  component="img"
+                  height="350"
+                  width="100"
+                  image={
+                    listing.photo_url_1 ||
+                    listing.photo_url_2 ||
+                    listing.photo_url_3
+                  }
+                  alt={listing.title}
+                />
+                <CardContent>
+                  <Typography variant="h6" component="div">
+                    {listing.title}
+                  </Typography>
+                  <Typography variant="subtitle1" color="text.secondary">
+                    ${listing.price}
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate(`/listings/${listing.id}`)}
+                  >
+                    View More
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
-      </Box> */}
+      ) : (
+        <p>loading...</p>
+      )}
     </div>
   ) : (
     // content rendered for users that are NOT signed in NOR logged in:
