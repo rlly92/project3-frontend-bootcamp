@@ -51,8 +51,10 @@ const CreateListing = () => {
   const accessToken = localStorage.getItem("accessToken");
   //
   // LOCAL STATES FOR IMAGE SUBMISSION:
-  const [openModal, setOpenModal] = useState(false);
-  const [file, setFile] = useState([]);
+  const [file1, setFile1] = useState(null);
+  const [file2, setFile2] = useState(null);
+  const [file3, setFile3] = useState(null);
+  // const [file, setFile] = useState([]);
   const [fileErrorText, setFileErrorText] = useState("");
   //
 
@@ -70,9 +72,6 @@ const CreateListing = () => {
     shipping_detail: "",
     sku_number: "",
     quantity: "",
-    photo_url_1: "",
-    photo_url_2: "",
-    photo_url_3: "",
   });
 
   // WHEN USER FIRST ACCESSES THIS PAGE: GET USER ID AND STORE IN LOCAL STATE:
@@ -116,14 +115,43 @@ const CreateListing = () => {
   console.log("state.user_id:", state.user_id);
 
   // LOGIC FOR SUBMIT BUTTON:
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Extract category IDs to send to backend
     const selectedCategoryIDs = selectedCategories.map(({ value }) => value);
     console.log(selectedCategoryIDs);
 
-    // FIREBASE LOGIC GOES HERE: (need to call the FIREBASE URL up and store it here first before pushing it into backend)
+    // FIREBASE LOGIC FOR SUBMITTING PHOTOS GOES HERE: (need to call the FIREBASE URL up and store it here first before pushing it into backend)
+    const fileURLs = [];
+    if (file1) {
+      const storageRef = sRef(storage, `photos/${file1.name}`);
+      await uploadBytesResumable(storageRef, file1);
+      const downloadURL1 = await getDownloadURL(storageRef);
+      fileURLs.push(downloadURL1);
+    }
+    if (file2) {
+      const storageRef = sRef(storage, `photos/${file2.name}`);
+      await uploadBytesResumable(storageRef, file2);
+      const downloadURL2 = await getDownloadURL(storageRef);
+      fileURLs.push(downloadURL2);
+    }
+    if (file3) {
+      const storageRef = sRef(storage, `photos/${file3.name}`);
+      await uploadBytesResumable(storageRef, file3);
+      const downloadURL3 = await getDownloadURL(storageRef);
+      fileURLs.push(downloadURL3);
+    }
+
+    // Upload files to Firebase Storage
+    //
+    // const fileURLs = [];
+    // for (let i = 0; i < file.length && i < 3; i++) {
+    //   const storageRef = sRef(storage, `photos/${file[i].name}`);
+    //   await uploadBytesResumable(storageRef, file[i]);
+    //   const downloadURL = await getDownloadURL(storageRef);
+    //   fileURLs.push(downloadURL);
+    // }
 
     // Perform form submission actions to the backend:
     axios
@@ -138,9 +166,9 @@ const CreateListing = () => {
           sku_number: state.sku_number,
           quantity: state.quantity,
           selectedCategoryIDs,
-          photo_url_1: state.photo_url_1,
-          photo_url_2: state.photo_url_2,
-          photo_url_3: state.photo_url_3,
+          photo_url_1: fileURLs[0] || "",
+          photo_url_2: fileURLs[1] || "",
+          photo_url_3: fileURLs[2] || "",
         },
         {
           headers: {
@@ -157,10 +185,10 @@ const CreateListing = () => {
           shipping_detail: "",
           sku_number: "",
           quantity: "",
-          photo_url_1: "",
-          photo_url_2: "",
-          photo_url_3: "",
         });
+        setFile1(null);
+        setFile2(null);
+        setFile3(null);
         setSelectedCategories([]);
 
         navigate(`/listings`);
@@ -168,26 +196,8 @@ const CreateListing = () => {
       .catch((error) => {
         console.log(error);
       });
-    console.log({
-      user_id: state.user_id,
-      title: state.title,
-      price: state.price,
-      description: state.description,
-      shipping_detail: state.shipping_detail,
-      sku_number: state.sku_number,
-      quantity: state.quantity,
-      selectedCategoryIDs,
-      photo_url_1: state.photo_url_1,
-      photo_url_2: state.photo_url_2,
-      photo_url_3: state.photo_url_3,
-    });
-    return console.log("you've submitted user info!");
-  };
 
-  // Handle Change for general field inputs (NOT FOR CATEGORIES INPUT):
-  const handleChange = (e) => {
-    setState({ ...state, [e.target.id]: e.target.value });
-    console.log(state);
+    return console.log("you've submitted user info!");
   };
 
   // LOGIC REQUIRED FOR HANDLING CATEGORY SUBMISSIONS:
@@ -227,50 +237,38 @@ const CreateListing = () => {
   //
   //
 
-  // LOGIC REQUIRED FOR SUBMISSION OF PHOTOS:
+  // LOGIC REQUIRED FOR HANDLING CHANGE OF PHOTO FILES AND FORM INPUTS:
 
-  const uploadFile = async (files, postKey) => {
-    if (files == null) return 0;
-
-    let images = {};
-
-    await Promise.all(
-      files.map(async (image, index) => {
-        const imageRef = sRef(
-          storage,
-          `images/${postKey}/${crypto.randomUUID() + image.name}`
-        );
-        await uploadBytesResumable(imageRef, image);
-        let imageURL = await getDownloadURL(imageRef);
-        images[crypto.randomUUID()] = imageURL;
-      })
-    );
-    console.log(images);
-    return images;
+  // Handle Change for general field inputs (NOT FOR CATEGORIES INPUT):
+  const handleChange = (e) => {
+    setState({ ...state, [e.target.id]: e.target.value });
+    console.log(state);
   };
 
-  const handleFileChange = (newFile) => {
+  // Handle File Change for each MuiFileInput field
+  const handleFileChange1 = (newFile) => {
     setFileErrorText("");
-    setFile(newFile);
-    console.log(file);
+    setFile1(newFile);
+    console.log("file1:", file1);
   };
 
-  const handleImageSubmit = async () => {
-    console.log(file);
-
-    // const imagesRef = dbRef(database, `posts/images`);
-    // const images = await uploadFile(file, selectedPost.key);
-    // let updates = { ...selectedPost.images, ...images };
-    // console.log(updates);
-
-    // await toast.promise(update(imagesRef, updates), {
-    //   pending: `Uploading photos 🤩`,
-    //   success: "Successfully uploaded photos! 👌",
-    //   error: "An error occurred... 🤯",
-    // });
-
-    setFile([]);
+  const handleFileChange2 = (newFile) => {
+    setFileErrorText("");
+    setFile2(newFile);
+    console.log("file2:", file2);
   };
+
+  const handleFileChange3 = (newFile) => {
+    setFileErrorText("");
+    setFile3(newFile);
+    console.log("file3:", file3);
+  };
+
+  // const handleFileChange = (newFile) => {
+  //   setFileErrorText("");
+  //   setFile(newFile);
+  //   console.log(file);
+  // };
 
   //
   //
@@ -288,8 +286,8 @@ const CreateListing = () => {
 
   return (
     <div>
+      <NavBar />
       <Stack alignItems={"center"} justifyContent={"center"} my={5}>
-        <NavBar />
         <>
           <Box m={2} p={2}>
             <Typography
@@ -376,37 +374,45 @@ const CreateListing = () => {
                 label="Quantity"
                 onChange={handleChange}
               ></TextField>
-
-              <TextField
-                required
-                autoComplete="off"
-                value={state.photo_url_1}
+              <DialogTitle id="alert-dialog-title" variant="h6">
+                Add up to 3 photos for this listing:
+              </DialogTitle>
+              <MuiFileInput
                 size="small"
+                value={file1}
                 id="photo_url_1"
-                type="photo_url_1"
-                label="upload an image (jpg) here"
-                onChange={handleChange}
-              ></TextField>
-              <TextField
-                required
-                autoComplete="off"
-                value={state.photo_url_2}
+                onChange={handleFileChange1}
+                placeholder="Click here to choose an image"
+                helperText={
+                  fileErrorText ? fileErrorText : "Please upload only 1 image."
+                }
+                error={fileErrorText ? true : false}
+              />
+              <MuiFileInput
                 size="small"
+                value={file2}
                 id="photo_url_2"
-                type="photo_url_2"
-                label="upload an image (jpg) here"
-                onChange={handleChange}
-              ></TextField>
-              <TextField
-                required
-                autoComplete="off"
-                value={state.photo_url_3}
+                onChange={handleFileChange2}
+                placeholder="Click here to choose an image"
+                helperText={
+                  fileErrorText ? fileErrorText : "Please upload only 1 image."
+                }
+                error={fileErrorText ? true : false}
+              />
+              <MuiFileInput
                 size="small"
+                value={file3}
                 id="photo_url_3"
-                type="photo_url_3"
-                label="upload an image (jpg) here"
-                onChange={handleChange}
-              ></TextField>
+                onChange={handleFileChange3}
+                placeholder="Click here to choose an image"
+                helperText={
+                  fileErrorText ? fileErrorText : "Please upload only 1 image."
+                }
+                error={fileErrorText ? true : false}
+              />
+              <DialogTitle id="alert-dialog-title" variant="h6">
+                Pick a Category tag for your listing:
+              </DialogTitle>
               <label>
                 <Select
                   isMulti
@@ -417,6 +423,7 @@ const CreateListing = () => {
                   placeholder="Categories"
                 />
               </label>
+              <br />
               <Button type="submit" variant="contained">
                 SUBMIT YOUR LISTING
               </Button>
@@ -424,30 +431,6 @@ const CreateListing = () => {
           </form>
           <br />
         </>
-        <Dialog open={openModal} onClose={() => setOpenModal(false)}>
-          <DialogTitle id="alert-dialog-title">Add new photos</DialogTitle>
-          <DialogContent>
-            <MuiFileInput
-              size="small"
-              value={file}
-              onChange={handleFileChange}
-              placeholder="Click here to choose images"
-              multiple
-              helperText={
-                fileErrorText
-                  ? fileErrorText
-                  : "You can choose to upload multiple images!"
-              }
-              error={fileErrorText ? true : false}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleImageSubmit}>Confirm</Button>
-            <Button onClick={() => setOpenModal(false)} autoFocus>
-              Cancel
-            </Button>
-          </DialogActions>
-        </Dialog>
       </Stack>
     </div>
   );

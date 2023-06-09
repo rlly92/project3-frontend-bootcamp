@@ -64,9 +64,6 @@ const LoginPage = () => {
       <br />
       <br />
       <br />
-      <Typography variant="h6">
-        Proudly brought to you by reuBEN & DANiel
-      </Typography>
     </Stack>
   );
 };
