@@ -17,21 +17,18 @@ import Button from "@mui/material/Button";
 import NavBar from "./NavBar";
 import { toast } from "react-toastify";
 
+import Card from "@mui/material/Card";
+import CardHeader from "@mui/material/CardHeader";
+import CardMedia from "@mui/material/CardMedia";
+import CardContent from "@mui/material/CardContent";
+import CardActions from "@mui/material/CardActions";
+import Collapse from "@mui/material/Collapse";
+import Avatar from "@mui/material/Avatar";
+import IconButton from "@mui/material/IconButton";
 
-import Card from '@mui/material/Card';
-import CardHeader from '@mui/material/CardHeader';
-import CardMedia from '@mui/material/CardMedia';
-import CardContent from '@mui/material/CardContent';
-import CardActions from '@mui/material/CardActions';
-import Collapse from '@mui/material/Collapse';
-import Avatar from '@mui/material/Avatar';
-import IconButton from '@mui/material/IconButton';
+import { red } from "@mui/material/colors";
 
-import { red } from '@mui/material/colors';
-
-
-
-import "./ListingsStyle.css"
+import "./ListingsStyle.css";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
@@ -41,15 +38,13 @@ const Item = styled(Paper)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-
 const Listings = () => {
   const { logout, isAuthenticated, getAccessTokenSilently, user, isLoading } =
     useAuth0();
   const navigate = useNavigate();
   const [state, setState] = useState({ email: "" });
+  const [listings, setListings] = useState({ listings: [] });
   const accessToken = localStorage.getItem("accessToken");
-
-
 
   // GET TOKEN AND EMAIL ON MOUNT:
   useEffect(() => {
@@ -111,15 +106,37 @@ const Listings = () => {
     checkUserInfoExists();
   }, [state?.email, accessToken]);
 
+  // THIS USEFFECT BLOCK IS FOR LOADING OUT ALL THE LISTINGS:
+  useEffect(() => {
+    const loadAllListings = async () => {
+      try {
+        const getAllListings = await axios.get(`${BACKEND_URL}/listings`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
 
-
+        console.log("getAllListings.data:", getAllListings.data);
+        if (getAllListings.data) {
+          // if the listings exist in the db(they normally would), store the listings data in the local state of listings:
+          await setListings(getAllListings.data);
+        }
+      } catch (error) {
+        console.error(
+          "Error occurred while checking user info exists on db:",
+          error
+        );
+      }
+    };
+    loadAllListings();
+  }, []);
+  console.log("listings:", listings);
 
   if (isLoading) {
     // Show loading state
     return (
       <div>
         <h1>Loading...Your patience is appreciated.</h1>
-
       </div>
     );
   }
@@ -127,52 +144,60 @@ const Listings = () => {
   const bull = (
     <Box
       component="span"
-      sx={{ display: 'inline-block', mx: '2px', transform: 'scale(0.8)' }}
-    >
-
-    </Box>
+      sx={{ display: "inline-block", mx: "2px", transform: "scale(0.8)" }}
+    ></Box>
   );
 
-
-
-  return
-  isAuthenticated ? (
+  return isAuthenticated && listings ? (
     <div>
       <NavBar />
+      <br />
+      <br />
       <h1 className="centralized">ADD TO CART NOW! WHILE STOCKS LAST!</h1>
 
       <br />
-      <Box sx={{ width: '100%' }}>
-        <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }} >
-          {
-            data.map((prod) => {
-              return (
-                <>
-                  <Grid item xs={4}>
-                    <Card sx={{ minWidth: 275 }}>
-                      <CardContent>
-                        <Typography>
-                          <strong className="prod_title">{prod.prod_title}</strong>
-                        </Typography>
-                        <Typography>
-                          <p className="prod_price">{prod.prod_price}</p>
-                        </Typography>
-                        <Typography>
-                          <p className="prod_qty">Quantity : {prod.prod_quantity}</p>
-                        </Typography>
-                      </CardContent>
-                      <CardActions>
-                        <Button variant="outlined" className="add-2cart">Add to Cart</Button>
-                      </CardActions>
-                    </Card>
-                  </Grid>
-                </>
-              )
-            })
-          }
+
+      {listings.length > 0 ? (
+        <Grid container spacing={2}>
+          {listings.map((listing) => (
+            <Grid item xs={12} sm={6} md={4} key={listing.id}>
+              <Card>
+                <CardMedia
+                  component="img"
+                  height="350"
+                  width="100"
+                  image={
+                    listing.photo_url_1 ||
+                    listing.photo_url_2 ||
+                    listing.photo_url_3
+                  }
+                  alt={listing.title}
+                />
+                <CardContent>
+                  <Typography variant="h6" component="div">
+                    {listing.title}
+                  </Typography>
+                  <Typography variant="subtitle1" color="text.secondary">
+                    ${listing.price}
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate(`/listings/${listing.id}`)}
+                  >
+                    View More
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
-      </Box>
-    </div>) : (
+      ) : (
+        <p>loading...</p>
+      )}
+    </div>
+  ) : (
     // content rendered for users that are NOT signed in NOR logged in:
     <div>
       <h2>You are not logged in or signed up.</h2>
@@ -181,7 +206,6 @@ const Listings = () => {
       </Button>
     </div>
   );
-
 };
 
 export default Listings;

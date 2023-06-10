@@ -3,12 +3,27 @@ import axios from "axios";
 import { useAuth0 } from "@auth0/auth0-react";
 import { BACKEND_URL } from "../constants";
 import { useNavigate, useParams } from "react-router-dom";
-
+import {
+  ref as sRef,
+  getDownloadURL,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { ref as dbRef, update } from "firebase/database";
+import { database, storage } from "../firebase";
 import { Link } from "react-router-dom";
 import { UserContext } from "../App";
-import { Stack, TextField, Typography } from "@mui/material";
-/* import Typography from '@mui/joy/Typography'; */
-/* import Card from "@mui/joy/Card"; */
+import {
+  Stack,
+  TextField,
+  Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from "@mui/material";
+import { MuiFileInput } from "mui-file-input";
+
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -17,19 +32,37 @@ import Button from "@mui/material/Button";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
+
 // import Select from "@mui/material/Select";
 import Select from "react-select";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import NavBar from "./NavBar";
 
 const CreateListing = () => {
+  // FOR NAVIGATION:
   const navigate = useNavigate();
+  //
+  // FOR AUTH0:
   const { isAuthenticated, user, isLoading } = useAuth0();
+  //
+  // FOR GETTING ACCESS TOKEN FROM LOCAL STORAGE:
   const accessToken = localStorage.getItem("accessToken");
+  //
+  // LOCAL STATES FOR IMAGE SUBMISSION:
+  const [file1, setFile1] = useState(null);
+  const [file2, setFile2] = useState(null);
+  const [file3, setFile3] = useState(null);
+  // const [file, setFile] = useState([]);
+  const [fileErrorText, setFileErrorText] = useState("");
+  //
 
+  // LOCAL STATES FOR CATEGORIES SUBMISSION:
   const [allCategories, setAllCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  //
 
+  // LOCAL STATES FOR LISTINGS FORM SUBMISSION:
   const [state, setState] = useState({
     user_id: "",
     title: "",
@@ -38,9 +71,6 @@ const CreateListing = () => {
     shipping_detail: "",
     sku_number: "",
     quantity: "",
-    photo_url_1: "",
-    photo_url_2: "",
-    photo_url_3: "",
   });
 
   // WHEN USER FIRST ACCESSES THIS PAGE: GET USER ID AND STORE IN LOCAL STATE:
@@ -83,15 +113,35 @@ const CreateListing = () => {
 
   console.log("state.user_id:", state.user_id);
 
-  // LOGIC FOR SUBMIT BUTTON:
-  const handleSubmit = (e) => {
+  // ALL THE LOGIC FOR SUBMIT BUTTON TO SUBMIT ALL THE DATA TO BACKEND:
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+    // Show loading toast message
+    toast.info("Submitting form...", { autoClose: false });
     // Extract category IDs to send to backend
     const selectedCategoryIDs = selectedCategories.map(({ value }) => value);
     console.log(selectedCategoryIDs);
 
-    // FIREBASE LOGIC GOES HERE: (need to call the FIREBASE URL up and store it here first before pushing it into backend)
+    // FIREBASE LOGIC FOR SUBMITTING PHOTOS GOES HERE: (need to call the FIREBASE URL up and store it here first before pushing it into backend)
+    const fileURLs = [];
+    if (file1) {
+      const storageRef = sRef(storage, `photos/${file1.name}`);
+      await uploadBytesResumable(storageRef, file1);
+      const downloadURL1 = await getDownloadURL(storageRef);
+      fileURLs.push(downloadURL1);
+    }
+    if (file2) {
+      const storageRef = sRef(storage, `photos/${file2.name}`);
+      await uploadBytesResumable(storageRef, file2);
+      const downloadURL2 = await getDownloadURL(storageRef);
+      fileURLs.push(downloadURL2);
+    }
+    if (file3) {
+      const storageRef = sRef(storage, `photos/${file3.name}`);
+      await uploadBytesResumable(storageRef, file3);
+      const downloadURL3 = await getDownloadURL(storageRef);
+      fileURLs.push(downloadURL3);
+    }
 
     // Perform form submission actions to the backend:
     axios
@@ -106,9 +156,9 @@ const CreateListing = () => {
           sku_number: state.sku_number,
           quantity: state.quantity,
           selectedCategoryIDs,
-          photo_url_1: state.photo_url_1,
-          photo_url_2: state.photo_url_2,
-          photo_url_3: state.photo_url_3,
+          photo_url_1: fileURLs[0] || "",
+          photo_url_2: fileURLs[1] || "",
+          photo_url_3: fileURLs[2] || "",
         },
         {
           headers: {
@@ -116,7 +166,10 @@ const CreateListing = () => {
           },
         }
       )
+
       .then((res) => {
+        // Show success toast message
+        toast.success("Form submitted successfully!");
         setState({
           user_id: "",
           title: "",
@@ -125,37 +178,21 @@ const CreateListing = () => {
           shipping_detail: "",
           sku_number: "",
           quantity: "",
-          photo_url_1: "",
-          photo_url_2: "",
-          photo_url_3: "",
         });
+        setFile1(null);
+        setFile2(null);
+        setFile3(null);
         setSelectedCategories([]);
 
         navigate(`/listings`);
       })
       .catch((error) => {
         console.log(error);
+        // Show error toast message
+        toast.error("Error submitting form. Please try again.");
       });
-    console.log({
-      user_id: state.user_id,
-      title: state.title,
-      price: state.price,
-      description: state.description,
-      shipping_detail: state.shipping_detail,
-      sku_number: state.sku_number,
-      quantity: state.quantity,
-      selectedCategoryIDs,
-      photo_url_1: state.photo_url_1,
-      photo_url_2: state.photo_url_2,
-      photo_url_3: state.photo_url_3,
-    });
-    return console.log("you've submitted user info!");
-  };
 
-  // Handle Change for field inputs:
-  const handleChange = (e) => {
-    setState({ ...state, [e.target.id]: e.target.value });
-    console.log(state);
+    return console.log("you've submitted user info!");
   };
 
   // LOGIC REQUIRED FOR HANDLING CATEGORY SUBMISSIONS:
@@ -175,7 +212,8 @@ const CreateListing = () => {
   }, []);
 
   console.log("all categories in local state:", allCategories);
-  // categoryOptions for Category form input selection:
+  //
+  // categoryOptions for mapping out Category selection inputs to render:
   const categoryOptions = allCategories.map((category) => ({
     value: category.id,
     label: category.name,
@@ -192,7 +230,37 @@ const CreateListing = () => {
       color: "black",
     }),
   };
+  //
+  //
 
+  // LOGIC REQUIRED FOR HANDLING CHANGE OF PHOTO FILES AND FORM INPUTS (NOT INCLUDING CATEGORIES):
+
+  // Handle Change for general field inputs (NOT FOR CATEGORIES INPUT):
+  const handleChange = (e) => {
+    setState({ ...state, [e.target.id]: e.target.value });
+    console.log(state);
+  };
+
+  // Handle File Change for each MuiFileInput field (FOR THE IMAGES):
+  const handleFileChange1 = (newFile) => {
+    setFileErrorText("");
+    setFile1(newFile);
+    console.log("file1:", file1);
+  };
+
+  const handleFileChange2 = (newFile) => {
+    setFileErrorText("");
+    setFile2(newFile);
+    console.log("file2:", file2);
+  };
+
+  const handleFileChange3 = (newFile) => {
+    setFileErrorText("");
+    setFile3(newFile);
+    console.log("file3:", file3);
+  };
+
+  // IF PAGE IS LOADING.... THIS WILL RENDER:
   if (isLoading) {
     // Show loading state
     return (
@@ -204,8 +272,9 @@ const CreateListing = () => {
 
   return (
     <div>
+      <NavBar />
+
       <Stack alignItems={"center"} justifyContent={"center"} my={5}>
-        <NavBar />
         <>
           <Box m={2} p={2}>
             <Typography
@@ -292,37 +361,45 @@ const CreateListing = () => {
                 label="Quantity"
                 onChange={handleChange}
               ></TextField>
-
-              <TextField
-                required
-                autoComplete="off"
-                value={state.photo_url_1}
+              <DialogTitle id="alert-dialog-title" variant="h6">
+                Add up to 3 photos for this listing:
+              </DialogTitle>
+              <MuiFileInput
                 size="small"
+                value={file1}
                 id="photo_url_1"
-                type="photo_url_1"
-                label="upload an image (jpg) here"
-                onChange={handleChange}
-              ></TextField>
-              <TextField
-                required
-                autoComplete="off"
-                value={state.photo_url_2}
+                onChange={handleFileChange1}
+                placeholder="Click here to choose an image"
+                helperText={
+                  fileErrorText ? fileErrorText : "Please upload only 1 image."
+                }
+                error={fileErrorText ? true : false}
+              />
+              <MuiFileInput
                 size="small"
+                value={file2}
                 id="photo_url_2"
-                type="photo_url_2"
-                label="upload an image (jpg) here"
-                onChange={handleChange}
-              ></TextField>
-              <TextField
-                required
-                autoComplete="off"
-                value={state.photo_url_3}
+                onChange={handleFileChange2}
+                placeholder="Click here to choose an image"
+                helperText={
+                  fileErrorText ? fileErrorText : "Please upload only 1 image."
+                }
+                error={fileErrorText ? true : false}
+              />
+              <MuiFileInput
                 size="small"
+                value={file3}
                 id="photo_url_3"
-                type="photo_url_3"
-                label="upload an image (jpg) here"
-                onChange={handleChange}
-              ></TextField>
+                onChange={handleFileChange3}
+                placeholder="Click here to choose an image"
+                helperText={
+                  fileErrorText ? fileErrorText : "Please upload only 1 image."
+                }
+                error={fileErrorText ? true : false}
+              />
+              <DialogTitle id="alert-dialog-title" variant="h6">
+                Pick a Category tag for your listing:
+              </DialogTitle>
               <label>
                 <Select
                   isMulti
@@ -333,9 +410,11 @@ const CreateListing = () => {
                   placeholder="Categories"
                 />
               </label>
+              <br />
               <Button type="submit" variant="contained">
                 SUBMIT YOUR LISTING
               </Button>
+              <ToastContainer />
             </Stack>
           </form>
           <br />
