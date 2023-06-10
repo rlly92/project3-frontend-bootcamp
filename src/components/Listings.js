@@ -121,7 +121,7 @@ const Listings = () => {
       }
     };
     loadAllListings();
-  }, []);
+  }, [accessToken]);
   console.log("listings:", listings);
 
   if (isLoading) {
