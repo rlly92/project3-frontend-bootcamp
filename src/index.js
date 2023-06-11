@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SignUpInfoPage from "./components/SignUpInfoPage";
 import CreateListing from "./components/CreateListing";
 import Carts from "./components/Carts";
+import ItemListing from "./components/ItemListing";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -23,8 +24,8 @@ root.render(
         "read:current_user update:current_user_metadata openid profile email",
     }}
 
-  // useRefreshTokens={true}
-  // useRefreshTokensFallback={false}
+    // useRefreshTokens={true}
+    // useRefreshTokensFallback={false}
   >
     <BrowserRouter>
       <Routes>
@@ -34,6 +35,7 @@ root.render(
         <Route path="/signupinfo" element={<SignUpInfoPage />} />
         <Route path="/createlisting" element={<CreateListing />} />
         <Route path="/carts" element={<Carts />} />
+        <Route path="/itemlisting/:id" element={<ItemListing />} />
       </Routes>
     </BrowserRouter>
   </Auth0Provider>

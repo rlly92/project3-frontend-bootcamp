@@ -176,7 +176,7 @@ const Listings = () => {
                 <CardActions>
                   <Button
                     variant="contained"
-                    onClick={() => navigate(`/listings/${listing.id}`)}
+                    onClick={() => navigate(`/itemlisting/${listing.id}`)}
                   >
                     View More
                   </Button>
@@ -186,7 +186,7 @@ const Listings = () => {
           ))}
         </Grid>
       ) : (
-        <p>loading...</p>
+        <h2>loading...</h2>
       )}
     </div>
   ) : (
