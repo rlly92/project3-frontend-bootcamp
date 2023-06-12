@@ -9,12 +9,17 @@ import { toast } from "react-toastify";
 import NavBar from "./NavBar";
 
 const Carts = () => {
-	return (
-		<>
-			<NavBar />
-			<div>Carts</div>
-		</>
-	)
-}
+  // YOU HAVE TO MAKE A GET REQUEST TO FETCH THE ACTIVE CART FROM BACKEND HERE THEN CALL AGAIN TO GET OUT THE CARTS_LISTINGS:
+
+  //   call /carts/checkforactivecart and call /cartslistings/getalllineitems
+  return (
+    <>
+      <NavBar />
+
+      {/* render the cart listings here: */}
+      <div>Carts</div>
+    </>
+  );
+};
 
 export default Carts;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -7,7 +7,7 @@ import { Button, Stack, TextField, Typography } from "@mui/material";
 import { toast } from "react-toastify";
 
 const SignUpInfoPage = () => {
-  const { logout, isAuthenticated, user, getAccessTokenSilently, isLoading } =
+  const { isAuthenticated, user, getAccessTokenSilently, isLoading } =
     useAuth0();
 
   const accessToken = localStorage.getItem("accessToken");

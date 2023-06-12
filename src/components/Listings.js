@@ -34,8 +34,11 @@ const Listings = () => {
   const { logout, isAuthenticated, getAccessTokenSilently, user, isLoading } =
     useAuth0();
   const navigate = useNavigate();
+  const context = useContext(UserContext);
   const [state, setState] = useState({ email: "" });
   const [listings, setListings] = useState({ listings: [] });
+  const [cartID, setCartID] = useState({ cartID: null });
+  const [userID, setUserID] = useState({ userID: null });
   const accessToken = localStorage.getItem("accessToken");
 
   // GET TOKEN AND EMAIL ON MOUNT:
@@ -83,6 +86,7 @@ const Listings = () => {
           // Check the response to determine if the project exists
           if (!response.data.error) {
             console.log("user info exists!");
+            setUserID(response.data.id);
           } else {
             console.log("user info does not exist!");
             navigate("/signupinfo");
@@ -96,7 +100,9 @@ const Listings = () => {
       }
     };
     checkUserInfoExists();
-  }, [state?.email, accessToken]);
+  }, [state?.email, accessToken, navigate]);
+
+  console.log("userID:", userID);
 
   // THIS USEFFECT BLOCK IS FOR LOADING OUT ALL THE LISTINGS:
   useEffect(() => {
@@ -122,6 +128,40 @@ const Listings = () => {
     };
     loadAllListings();
   }, [accessToken]);
+  console.log("listings:", listings);
+
+  // UseEffect Block to check if user already has an active cart, if no, then create new cart with default 'active' status,
+  // if yes, then use same cart:
+  useEffect(() => {
+    const checkForActiveCartAndCreateCart = async () => {
+      try {
+        const getActiveCart = await axios.post(
+          `${BACKEND_URL}/carts/create`,
+          {
+            user_id: userID,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        if (getActiveCart.data) {
+          setCartID(getActiveCart.data.id);
+        }
+        console.log("getActiveCart:", getActiveCart.data);
+      } catch (error) {
+        console.error(
+          "Error occurred while checking if user had active cart",
+          error
+        );
+      }
+    };
+
+    checkForActiveCartAndCreateCart();
+  }, [accessToken, userID]);
+  console.log("cartID:", cartID);
+
   console.log("listings:", listings);
 
   if (isLoading) {

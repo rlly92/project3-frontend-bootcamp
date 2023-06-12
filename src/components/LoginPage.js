@@ -29,21 +29,35 @@ const LoginPage = () => {
   return (
     <Stack alignItems={"center"} justifyContent={"center"} my={1}>
       <Paper sx={{ px: 5, py: 4, my: 7 }} elevation={0}>
-        <Typography variant="h1" sx={{ fontFamily: "'Yeseva One'" }}>
+        <Typography
+          variant="h1"
+          sx={{ fontFamily: "'Yeseva One'", textAlign: "center" }}
+        >
           笨 蛋 <br />
           BEN-DAN <br />
           Ecommerce
         </Typography>
       </Paper>
-      <Typography variant="h4">
+      <Typography
+        variant="h4"
+        sx={{ fontFamily: "'Yeseva One'", textAlign: "center" }}
+      >
         Because online shopping should be STUPID easy.
       </Typography>
+      <br />
       <br />
       <Button variant="contained" onClick={() => loginWithRedirect()}>
         Log In
       </Button>
       <br />
-      <Typography variant="h4">Don't have an account yet?</Typography>
+      <br />
+      <Typography
+        variant="h4"
+        sx={{ fontFamily: "'Yeseva One'", textAlign: "center" }}
+      >
+        Don't have an account yet?
+      </Typography>
+      <br />
       <br />
       <Button
         variant="contained"

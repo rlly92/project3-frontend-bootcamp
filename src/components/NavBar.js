@@ -45,15 +45,13 @@ const NavBar = () => {
                 笨 蛋
               </Typography>
             </Button>
-
             <Button
               variant="contained"
               disableElevation
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/yourorders")}
             >
-              Profile
+              Your Orders & Listings
             </Button>
-
             <Button
               variant="contained"
               disableElevation
@@ -67,6 +65,13 @@ const NavBar = () => {
               onClick={() => navigate("/signupinfo")}
             >
               New User Info
+            </Button>{" "}
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={() => navigate("/carts")}
+            >
+              Your Cart
             </Button>
           </Typography>
 

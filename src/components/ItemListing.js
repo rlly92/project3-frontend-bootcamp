@@ -33,13 +33,18 @@ const ItemListing = () => {
 
   const navigate = useNavigate();
   const [currentAction, setCurrentAction] = useState("");
-  const [listingID, setListingID] = useState({ listingID: "" });
+  const [listingID, setListingID] = useState("");
   const params = useParams().id;
-  if (listingID !== params) {
-    setListingID(params);
-  }
+
   console.log(listingID);
-  const [listing, setListing] = useState({ listing: [] });
+  const [listing, setListing] = useState(null);
+
+  useEffect(() => {
+    console.log("params:", params);
+    if (listingID !== params) {
+      setListingID(params);
+    }
+  }, []);
 
   // WRITE LOGIC TO CALL BACKEND FOR GETTING OUT THIS LISTING:
   useEffect(() => {
@@ -57,20 +62,22 @@ const ItemListing = () => {
         console.log("getThisListing.data:", getThisListing.data);
         if (getThisListing.data) {
           // if the listings exist in the db(they normally would), store the listings data in the local state of listings:
-          await setListing(getThisListing.data);
+          setListing(getThisListing.data);
         }
       } catch (error) {
         console.error("Error occurred while getting listing", error);
       }
     };
-    loadThisListing();
+    if (listingID !== "") {
+      loadThisListing();
+    }
   }, [accessToken, listingID]);
   console.log("listing:", listing);
 
   // LOGIC TO CHECK IF THE PERSON ON THIS LISTING IS A SELLER OR A BUYER:
   useEffect(() => {
     const checkCurrentUserID = async () => {
-      if (user.email !== "") {
+      if (user.email !== "" && listing) {
         try {
           const response = await axios.get(
             `${BACKEND_URL}/users/checkuserinfo?email=${user.email}`,
@@ -96,20 +103,56 @@ const ItemListing = () => {
       }
     };
     checkCurrentUserID();
-  }, [user?.email, accessToken, listingID]);
-
-  //   if (currentAction === "User is a buyer.") {
-  //     setCurrentAction("deleteListing");
-  //   } else {
-  //     setCurrentAction("addToCart");
-  //   }
-  // };
+  }, [user?.email, accessToken, listingID, listing]);
 
   // LOGIC FOR WHEN "ADD TO CART" BUTTON IS PRESSED:
-  // const addToCart = () => {};
+  // const addToCart = () => {
+
+  // Perform form submission actions
+  //   axios
+  //     .post(
+  //       `${BACKEND_URL}/cartslistings/addtocart`,
+  //       {
+  //        listing_id: listingID,
+  //        cart_id: ????,
+  //        added_quantity: ???,
+  //        subtotal_price:???
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${accessToken}`,
+  //         },
+  //       }
+  //     )
+  //     .then((res) => {
+  //       setState({
+  //         email: "",
+  //         first_name: "",
+  //         last_name: "",
+  //         phone_number: "",
+  //         buyer_address: "",
+  //         seller_address: "",
+  //       });
+
+  //       navigate("/listings");
+  //     })
+  //     .catch((error) => {
+  //       console.log(error);
+  //     });
+  //   console.log({
+  //     email: state.email,
+  //     first_name: state.first_name,
+  //     last_name: state.last_name,
+  //     phone_number: state.phone_number,
+  //     buyer_address: state.buyer_address,
+  //     seller_address: state.seller_address,
+  //   });
+  //   return console.log("you've submitted user info!");
+  // };
+
+  // };
 
   // LOGIC FOR WHEN "DELETE ITEM" BUTTON IS PRESSED:
-
   const deleteItemListing = async () => {
     try {
       const confirmed = window.confirm(
@@ -155,13 +198,13 @@ const ItemListing = () => {
 
       <br />
       <ToastContainer />
-      {listing && Object.keys(listing).length > 0 ? (
+      {listing ? (
         <Grid container spacing={2} justifyContent="center">
           <Grid item xs={12} sm={6} md={4}>
             <Box display="flex" justifyContent="center">
               <Card>
                 <Carousel>
-                  {listing.photo_url_1 && (
+                  {listing.photo_url_1 ? (
                     <div>
                       <img
                         src={listing.photo_url_1}
@@ -173,8 +216,20 @@ const ItemListing = () => {
                         }}
                       />
                     </div>
+                  ) : (
+                    <div>
+                      <img
+                        src="" // Provide a blank image source here
+                        alt={listing.title}
+                        style={{
+                          width: "100%",
+                          maxHeight: "400px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
                   )}
-                  {listing.photo_url_2 && (
+                  {listing.photo_url_2 ? (
                     <div>
                       <img
                         src={listing.photo_url_2}
@@ -186,11 +241,35 @@ const ItemListing = () => {
                         }}
                       />
                     </div>
+                  ) : (
+                    <div>
+                      <img
+                        src="" // Provide a blank image source here
+                        alt={listing.title}
+                        style={{
+                          width: "100%",
+                          maxHeight: "400px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
                   )}
-                  {listing.photo_url_3 && (
+                  {listing.photo_url_3 ? (
                     <div>
                       <img
                         src={listing.photo_url_3}
+                        alt={listing.title}
+                        style={{
+                          width: "100%",
+                          maxHeight: "400px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <img
+                        src="" // Provide a blank image source here
                         alt={listing.title}
                         style={{
                           width: "100%",
@@ -223,7 +302,10 @@ const ItemListing = () => {
                   <br />
                   <CardActions>
                     {currentAction === "User is a buyer" ? (
-                      <Button variant="contained">Add to Cart</Button>
+                      <Button variant="contained">
+                        {/* onClick={addToCart} */}
+                        Add to Cart
+                      </Button>
                     ) : (
                       <Button variant="contained" onClick={deleteItemListing}>
                         Delete This Listing
