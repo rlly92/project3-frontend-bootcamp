@@ -9,7 +9,7 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { ref as dbRef, update } from "firebase/database";
-import { database, storage } from "../firebase";
+import { storage } from "../firebase";
 import { Link } from "react-router-dom";
 import { UserContext } from "../App";
 import {
@@ -117,7 +117,7 @@ const CreateListing = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Show loading toast message
-    toast.info("Submitting form...", { autoClose: false });
+    toast.info("Submitting listing...", { autoClose: false });
     // Extract category IDs to send to backend
     const selectedCategoryIDs = selectedCategories.map(({ value }) => value);
     console.log(selectedCategoryIDs);
@@ -129,22 +129,25 @@ const CreateListing = () => {
       await uploadBytesResumable(storageRef, file1);
       const downloadURL1 = await getDownloadURL(storageRef);
       fileURLs.push(downloadURL1);
+      console.log("fileURLs1:", fileURLs);
     }
     if (file2) {
       const storageRef = sRef(storage, `photos/${file2.name}`);
       await uploadBytesResumable(storageRef, file2);
       const downloadURL2 = await getDownloadURL(storageRef);
       fileURLs.push(downloadURL2);
+      console.log("fileURLs1+2:", fileURLs);
     }
     if (file3) {
       const storageRef = sRef(storage, `photos/${file3.name}`);
       await uploadBytesResumable(storageRef, file3);
       const downloadURL3 = await getDownloadURL(storageRef);
       fileURLs.push(downloadURL3);
+      console.log("fileURLs1+2+3:", fileURLs);
     }
 
     // Perform form submission actions to the backend:
-    axios
+    await axios
       .post(
         `${BACKEND_URL}/listings/create`,
         {
@@ -169,7 +172,8 @@ const CreateListing = () => {
 
       .then((res) => {
         // Show success toast message
-        toast.success("Form submitted successfully!");
+        toast.success("Listing submitted successfully!");
+        console.log("you've submitted listing info!");
         setState({
           user_id: "",
           title: "",
@@ -189,10 +193,8 @@ const CreateListing = () => {
       .catch((error) => {
         console.log(error);
         // Show error toast message
-        toast.error("Error submitting form. Please try again.");
+        toast.error("Error submitting listings. Please try again.");
       });
-
-    return console.log("you've submitted user info!");
   };
 
   // LOGIC REQUIRED FOR HANDLING CATEGORY SUBMISSIONS:
@@ -209,7 +211,7 @@ const CreateListing = () => {
       console.log(categories);
     };
     getAllCategories();
-  }, []);
+  }, [accessToken]);
 
   console.log("all categories in local state:", allCategories);
   //

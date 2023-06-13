@@ -8,7 +8,7 @@ import { Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { toast } from "react-toastify";
 import NavBar from "./NavBar";
 
-const UserProfilePage = () => {
+const UserOrders = () => {
   const {
     user,
     isAuthenticated,
@@ -78,4 +78,4 @@ const UserProfilePage = () => {
   );
 };
 
-export default UserProfilePage;
+export default UserOrders;

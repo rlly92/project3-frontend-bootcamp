@@ -9,6 +9,9 @@ import {
   Stack,
   Button,
   Avatar,
+  Autocomplete,
+  TextField,
+  Box,
 } from "@mui/material";
 import SearchBar from "./UserSearchBar";
 import { useNavigate, Outlet } from "react-router-dom";
@@ -16,6 +19,9 @@ import { useNavigate, Outlet } from "react-router-dom";
 const NavBar = () => {
   const navigate = useNavigate();
   const { logout, isAuthenticated } = useAuth0();
+  const context = useContext(UserContext);
+
+  console.log("context.listingsForNavBar:", context.listingsForNavBar);
 
   //   const context = useContext(UserContext);
   //   const displayName = context.loggedInUser
@@ -29,6 +35,10 @@ const NavBar = () => {
   //   const handleProfileClick = () => {
   //     navigate(`/user/${displayName}`);
   //   };
+
+  const handleItemClick = (optionID) => {
+    navigate(`/itemlisting/${optionID}`);
+  };
 
   return (
     <>
@@ -45,15 +55,13 @@ const NavBar = () => {
                 笨 蛋
               </Typography>
             </Button>
-
             <Button
               variant="contained"
               disableElevation
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/yourorders")}
             >
-              Profile
+              Your Orders & Listings
             </Button>
-
             <Button
               variant="contained"
               disableElevation
@@ -61,14 +69,47 @@ const NavBar = () => {
             >
               Create A New Listing
             </Button>
-            <Button
+            {/* THIS BUTTON BELOW WAS CREATED PURELY FOR DEV STAGES AND IS NOT NEEDED FOR USER AT DEPLOYMENT: */}
+            {/* <Button
               variant="contained"
               disableElevation
               onClick={() => navigate("/signupinfo")}
             >
               New User Info
+            </Button>{" "} */}
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={() => navigate("/carts")}
+            >
+              Your Cart
             </Button>
           </Typography>
+          {context.listingsForNavBar ? (
+            <Autocomplete
+              id="listingTitle"
+              getOptionLabel={(option) => option.title}
+              options={context.listingsForNavBar}
+              sx={{ width: 300 }}
+              isOptionEqualToValue={(option, value) => option === value}
+              noOptionsText={"NO ITEMS CAN BE FOUND"}
+              renderOption={(props, option) => (
+                <Box
+                  component="li"
+                  {...props}
+                  key={option.title}
+                  onClick={() => handleItemClick(option.id)}
+                >
+                  {option.title}
+                </Box>
+              )}
+              renderInput={(params) => (
+                <TextField {...params} label="Search for your latest buy!" />
+              )}
+            />
+          ) : (
+            <div> </div>
+          )}
 
           <Button
             variant="contained"

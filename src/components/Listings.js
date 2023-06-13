@@ -5,6 +5,7 @@ import { BACKEND_URL } from "../constants";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { UserContext } from "../App";
+
 import { Stack, TextField, Typography } from "@mui/material";
 /* import Typography from '@mui/joy/Typography'; */
 /* import Card from "@mui/joy/Card"; */
@@ -30,20 +31,17 @@ import { red } from "@mui/material/colors";
 
 import "./ListingsStyle.css";
 
-const Item = styled(Paper)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
-  ...theme.typography.body2,
-  padding: theme.spacing(1),
-  textAlign: "center",
-  color: theme.palette.text.secondary,
-}));
-
 const Listings = () => {
   const { logout, isAuthenticated, getAccessTokenSilently, user, isLoading } =
     useAuth0();
   const navigate = useNavigate();
+  const context = useContext(UserContext);
+  console.log("context:", context);
+
   const [state, setState] = useState({ email: "" });
   const [listings, setListings] = useState({ listings: [] });
+  // const [cartID, setCartID] = useState({ cartID: null });
+  // const [userID, setUserID] = useState({ userID: null });
   const accessToken = localStorage.getItem("accessToken");
 
   // GET TOKEN AND EMAIL ON MOUNT:
@@ -91,6 +89,7 @@ const Listings = () => {
           // Check the response to determine if the project exists
           if (!response.data.error) {
             console.log("user info exists!");
+            context.setUserID(response.data.id);
           } else {
             console.log("user info does not exist!");
             navigate("/signupinfo");
@@ -104,7 +103,9 @@ const Listings = () => {
       }
     };
     checkUserInfoExists();
-  }, [state?.email, accessToken]);
+  }, [state?.email, accessToken, navigate]);
+
+  console.log("userID:", context.userID);
 
   // THIS USEFFECT BLOCK IS FOR LOADING OUT ALL THE LISTINGS:
   useEffect(() => {
@@ -120,6 +121,7 @@ const Listings = () => {
         if (getAllListings.data) {
           // if the listings exist in the db(they normally would), store the listings data in the local state of listings:
           await setListings(getAllListings.data);
+          context.setListingsForNavBar(getAllListings.data);
         }
       } catch (error) {
         console.error(
@@ -129,7 +131,43 @@ const Listings = () => {
       }
     };
     loadAllListings();
-  }, []);
+  }, [accessToken]);
+  console.log("listings:", listings);
+
+  // UseEffect Block to check if user already has an active cart, if no, then create new cart with default 'active' status,
+  // if yes, then use same cart:
+  useEffect(() => {
+    const checkForActiveCartAndCreateCart = async () => {
+      try {
+        const getActiveCart = await axios.post(
+          `${BACKEND_URL}/carts/create`,
+          {
+            user_id: context.userID,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        if (getActiveCart.data) {
+          context.setCartID(getActiveCart.data.id);
+        }
+        console.log("getActiveCart:", getActiveCart.data);
+      } catch (error) {
+        console.error(
+          "Error occurred while checking if user had active cart",
+          error
+        );
+      }
+    };
+
+    if (context.userID) {
+      checkForActiveCartAndCreateCart();
+    }
+  }, [accessToken, context.userID]);
+  console.log("cartID:", context.cartID);
+
   console.log("listings:", listings);
 
   if (isLoading) {
@@ -184,7 +222,7 @@ const Listings = () => {
                 <CardActions>
                   <Button
                     variant="contained"
-                    onClick={() => navigate(`/listings/${listing.id}`)}
+                    onClick={() => navigate(`/itemlisting/${listing.id}`)}
                   >
                     View More
                   </Button>
@@ -194,7 +232,7 @@ const Listings = () => {
           ))}
         </Grid>
       ) : (
-        <p>loading...</p>
+        <h2>loading...</h2>
       )}
     </div>
   ) : (
