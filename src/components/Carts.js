@@ -204,13 +204,14 @@ const Carts = () => {
   };
 
   // LOGIC FOR WHEN USER WANTS TO EDIT AND ADJUST THE QTY FOR THE CART ITEM HE/SHE ADDED:
-  const updateQuantity = async (cartListingId, quantity) => {
+  const updateQuantity = async (cartListingId, quantity, subtotal) => {
     try {
-      const updatedItem = await axios.patch(
-        `${BACKEND_URL}/cartslistings/updatequantity`,
+      const updatedItem = await axios.put(
+        `${BACKEND_URL}/cartslistings/updateitemqty`,
         {
-          cartListingId,
-          quantity,
+          added_quantity: quantity,
+          id: cartListingId,
+          subtotal_price: subtotal,
         },
         {
           headers: {
@@ -220,9 +221,25 @@ const Carts = () => {
       );
 
       console.log(updatedItem);
-      toast.success("Quantity updated successfully");
 
-      // Reload the cart listings to reflect the updated quantity and subtotal
+      console.log("statusText for updatedItem:", updatedItem.statusText);
+      if (updatedItem.statusText === "OK" && !updatedItem.data.message) {
+        toast.success("Quantity updated successfully");
+        // Reload the cart listings to reflect the updated quantity and subtotal
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      }
+      console.log(
+        "error message for when edit qty>listing qty:",
+        updatedItem.data.message
+      );
+      if (
+        updatedItem.data.message ===
+        "You have exceeded the stock quantity available"
+      ) {
+        toast.error("Quantity added exceeded the available stock.");
+      }
     } catch (error) {
       console.error("Error occurred while updating the quantity.", error);
     }
@@ -260,7 +277,12 @@ const Carts = () => {
                     />
                     <CardContent>
                       <Typography variant="h6" component="div">
-                        {listing.title}
+                        <Link
+                          to={`/itemlisting/${listing.id}`}
+                          style={{ textDecoration: "none", color: "inherit" }}
+                        >
+                          {listing.title}
+                        </Link>
                       </Typography>
                       <Typography variant="subtitle1" color="text.secondary">
                         Price: ${listing.price}
@@ -269,12 +291,13 @@ const Carts = () => {
                         Quantity ordered: {cartListing.added_quantity}
                       </Typography>
                       <Typography variant="subtitle1" color="text.secondary">
-                        Subtotal: ${cartListing.subtotal_price}
+                        Subtotal: ${listing.price * cartListing.added_quantity}
                       </Typography>
                     </CardContent>
                     <CardActions>
                       <Button
                         variant="contained"
+                        color="error"
                         onClick={() => deleteItemFromCart(cartListing.id)}
                       >
                         Remove item
@@ -283,11 +306,17 @@ const Carts = () => {
                         variant="contained"
                         onClick={() => {
                           const newQuantity = prompt("Enter the new quantity");
-                          if (newQuantity) {
+                          if (newQuantity && parseInt(newQuantity) !== 0) {
+                            const subtotal =
+                              listing.price * parseInt(newQuantity);
                             updateQuantity(
                               cartListing.id,
-                              parseInt(newQuantity)
+                              parseInt(newQuantity),
+                              subtotal
                             );
+                          } else {
+                            // Show an error message or handle the case where the quantity is 0
+                            toast.error("Invalid quantity");
                           }
                         }}
                       >
