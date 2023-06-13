@@ -32,6 +32,9 @@ const ItemListing = () => {
   const accessToken = localStorage.getItem("accessToken");
 
   const navigate = useNavigate();
+  const [addedQuantity, setAddedQuantity] = useState(1); // Default quantity is 1
+  const [userID, setUserID] = useState(null);
+  const [cartID, setCartID] = useState(null);
   const [currentAction, setCurrentAction] = useState("");
   const [listingID, setListingID] = useState("");
   const params = useParams().id;
@@ -87,8 +90,9 @@ const ItemListing = () => {
               },
             }
           );
-          console.log("current userID:", response.data.id);
 
+          console.log("current userID:", response.data.id);
+          await setUserID(response.data.id);
           if (response.data.id === listing.user_id) {
             setCurrentAction("User is a seller");
           } else {
@@ -104,53 +108,85 @@ const ItemListing = () => {
     };
     checkCurrentUserID();
   }, [user?.email, accessToken, listingID, listing]);
+  console.log("local state: userID:", userID);
+  // Logic to look up Cart ID:
+  useEffect(() => {
+    const lookUpCartID = async () => {
+      // look up cartID:
+      try {
+        const findActiveCartID = await axios.get(
+          `${BACKEND_URL}/carts/checkforactivecart?user_id=${userID}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        console.log("findActiveCartID:", findActiveCartID.data.id);
+        if (findActiveCartID.data.id) {
+          console.log("cartID exists!");
+          setCartID(findActiveCartID.data.id);
+        } else {
+          console.log("cartID does not exist!");
+          navigate("/listings");
+        }
+      } catch (error) {
+        console.error(
+          "Error occurred while checking user info exists on db:",
+          error
+        );
+      }
+    };
+
+    if (userID !== null) {
+      lookUpCartID();
+    }
+  }, [userID, accessToken, navigate, cartID]);
+  console.log("cartID:", cartID);
 
   // LOGIC FOR WHEN "ADD TO CART" BUTTON IS PRESSED:
-  // const addToCart = () => {
+  const addToCart = () => {
+    if (addedQuantity > listing.quantity) {
+      toast.error(
+        "Insufficient stock for sale. Quantity added to cart has to be within listed quanity."
+      );
+      return;
+    }
+    if (addedQuantity === 0) {
+      toast.error("Quantity desired cannot be 0.");
+      return;
+    }
 
-  // Perform form submission actions
-  //   axios
-  //     .post(
-  //       `${BACKEND_URL}/cartslistings/addtocart`,
-  //       {
-  //        listing_id: listingID,
-  //        cart_id: ????,
-  //        added_quantity: ???,
-  //        subtotal_price:???
-  //       },
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${accessToken}`,
-  //         },
-  //       }
-  //     )
-  //     .then((res) => {
-  //       setState({
-  //         email: "",
-  //         first_name: "",
-  //         last_name: "",
-  //         phone_number: "",
-  //         buyer_address: "",
-  //         seller_address: "",
-  //       });
+    const subtotalPrice = listing.price * addedQuantity;
 
-  //       navigate("/listings");
-  //     })
-  //     .catch((error) => {
-  //       console.log(error);
-  //     });
-  //   console.log({
-  //     email: state.email,
-  //     first_name: state.first_name,
-  //     last_name: state.last_name,
-  //     phone_number: state.phone_number,
-  //     buyer_address: state.buyer_address,
-  //     seller_address: state.seller_address,
-  //   });
-  //   return console.log("you've submitted user info!");
-  // };
-
-  // };
+    axios
+      .post(
+        `${BACKEND_URL}/cartslistings/addtocart`,
+        {
+          listing_id: listingID,
+          cart_id: cartID,
+          added_quantity: addedQuantity,
+          subtotal_price: subtotalPrice,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      .then((res) => {
+        console.log(res.data.message);
+        if (res.data.message === "This item already exists in the cart") {
+          toast.error(
+            "Item already exists in the cart, please go to YOUR CART to adjust quantity."
+          );
+        } else toast.success("Item added to cart successfully");
+        navigate("/listings");
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
 
   // LOGIC FOR WHEN "DELETE ITEM" BUTTON IS PRESSED:
   const deleteItemListing = async () => {
@@ -302,10 +338,24 @@ const ItemListing = () => {
                   <br />
                   <CardActions>
                     {currentAction === "User is a buyer" ? (
-                      <Button variant="contained">
-                        {/* onClick={addToCart} */}
-                        Add to Cart
-                      </Button>
+                      <div>
+                        <TextField
+                          label="Quantity"
+                          type="number"
+                          InputProps={{
+                            inputProps: { min: 1, max: listing.quantity },
+                          }}
+                          value={addedQuantity}
+                          onChange={(e) =>
+                            setAddedQuantity(parseInt(e.target.value))
+                          }
+                          required
+                          sx={{ width: 150, marginRight: 2 }}
+                        />
+                        <Button variant="contained" onClick={addToCart}>
+                          Add to Cart
+                        </Button>
+                      </div>
                     ) : (
                       <Button variant="contained" onClick={deleteItemListing}>
                         Delete This Listing

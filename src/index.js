@@ -28,16 +28,6 @@ root.render(
     // useRefreshTokens={true}
     // useRefreshTokensFallback={false}
   >
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/listings" element={<Listings />} />
-        <Route path="/yourorders" element={<UserOrders />} />
-        <Route path="/signupinfo" element={<SignUpInfoPage />} />
-        <Route path="/createlisting" element={<CreateListing />} />
-        <Route path="/carts" element={<Carts />} />
-        <Route path="/itemlisting/:id" element={<ItemListing />} />
-      </Routes>
-    </BrowserRouter>
+    <App />
   </Auth0Provider>
 );

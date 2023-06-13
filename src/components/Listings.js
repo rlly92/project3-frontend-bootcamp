@@ -5,6 +5,7 @@ import { BACKEND_URL } from "../constants";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { UserContext } from "../App";
+
 import { Stack, TextField, Typography } from "@mui/material";
 /* import Typography from '@mui/joy/Typography'; */
 /* import Card from "@mui/joy/Card"; */
@@ -35,10 +36,12 @@ const Listings = () => {
     useAuth0();
   const navigate = useNavigate();
   const context = useContext(UserContext);
+  console.log("context:", context);
+
   const [state, setState] = useState({ email: "" });
   const [listings, setListings] = useState({ listings: [] });
-  const [cartID, setCartID] = useState({ cartID: null });
-  const [userID, setUserID] = useState({ userID: null });
+  // const [cartID, setCartID] = useState({ cartID: null });
+  // const [userID, setUserID] = useState({ userID: null });
   const accessToken = localStorage.getItem("accessToken");
 
   // GET TOKEN AND EMAIL ON MOUNT:
@@ -86,7 +89,7 @@ const Listings = () => {
           // Check the response to determine if the project exists
           if (!response.data.error) {
             console.log("user info exists!");
-            setUserID(response.data.id);
+            context.setUserID(response.data.id);
           } else {
             console.log("user info does not exist!");
             navigate("/signupinfo");
@@ -102,7 +105,7 @@ const Listings = () => {
     checkUserInfoExists();
   }, [state?.email, accessToken, navigate]);
 
-  console.log("userID:", userID);
+  console.log("userID:", context.userID);
 
   // THIS USEFFECT BLOCK IS FOR LOADING OUT ALL THE LISTINGS:
   useEffect(() => {
@@ -118,6 +121,7 @@ const Listings = () => {
         if (getAllListings.data) {
           // if the listings exist in the db(they normally would), store the listings data in the local state of listings:
           await setListings(getAllListings.data);
+          context.setListingsForNavBar(getAllListings.data);
         }
       } catch (error) {
         console.error(
@@ -138,7 +142,7 @@ const Listings = () => {
         const getActiveCart = await axios.post(
           `${BACKEND_URL}/carts/create`,
           {
-            user_id: userID,
+            user_id: context.userID,
           },
           {
             headers: {
@@ -147,7 +151,7 @@ const Listings = () => {
           }
         );
         if (getActiveCart.data) {
-          setCartID(getActiveCart.data.id);
+          context.setCartID(getActiveCart.data.id);
         }
         console.log("getActiveCart:", getActiveCart.data);
       } catch (error) {
@@ -158,9 +162,11 @@ const Listings = () => {
       }
     };
 
-    checkForActiveCartAndCreateCart();
-  }, [accessToken, userID]);
-  console.log("cartID:", cartID);
+    if (context.userID) {
+      checkForActiveCartAndCreateCart();
+    }
+  }, [accessToken, context.userID]);
+  console.log("cartID:", context.cartID);
 
   console.log("listings:", listings);
 
