@@ -34,6 +34,7 @@ const ItemListing = () => {
   const navigate = useNavigate();
   const [addedQuantity, setAddedQuantity] = useState(1); // Default quantity is 1
   const [userID, setUserID] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
   const [cartID, setCartID] = useState(null);
   const [currentAction, setCurrentAction] = useState("");
   const [listingID, setListingID] = useState("");
@@ -80,10 +81,15 @@ const ItemListing = () => {
   // LOGIC TO CHECK IF THE PERSON ON THIS LISTING IS A SELLER OR A BUYER:
   useEffect(() => {
     const checkCurrentUserID = async () => {
-      if (user.email !== "" && listing) {
+      if (isAuthenticated && user) {
+        setUserEmail(user.email);
+        console.log("user email:", user.email);
+        console.log("local state userEmail:", userEmail);
+      }
+      if (userEmail !== null && listing) {
         try {
           const response = await axios.get(
-            `${BACKEND_URL}/users/checkuserinfo?email=${user.email}`,
+            `${BACKEND_URL}/users/checkuserinfo?email=${userEmail}`,
             {
               headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -107,7 +113,7 @@ const ItemListing = () => {
       }
     };
     checkCurrentUserID();
-  }, [user?.email, accessToken, listingID, listing]);
+  }, [userEmail, accessToken, listingID, listing, isAuthenticated, user]);
   console.log("local state: userID:", userID);
   // Logic to look up Cart ID:
   useEffect(() => {

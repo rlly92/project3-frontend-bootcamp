@@ -12,6 +12,7 @@ import { BrowserRouter, Route, Routes, Navigate, Link } from "react-router-dom";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ViewCheckedOutCartOrders from "./components/ViewCheckedOutCartOrders";
 
 // import "./App.css";
 
@@ -46,6 +47,10 @@ const App = () => {
             <Route path="/createlisting" element={<CreateListing />} />
             <Route path="/carts" element={<Carts />} />
             <Route path="/itemlisting/:id" element={<ItemListing />} />
+            <Route
+              path="/vieworder/:id"
+              element={<ViewCheckedOutCartOrders />}
+            />
           </Routes>
         </BrowserRouter>
 
