@@ -120,6 +120,15 @@ const UserOrders = () => {
     }
   }, [accessToken, userID]);
 
+  if (isLoading) {
+    // Show loading state
+    return (
+      <div>
+        <h1>Loading...Your patience is appreciated.</h1>
+      </div>
+    );
+  }
+
   return (
     isAuthenticated && (
       <div>
@@ -130,8 +139,9 @@ const UserOrders = () => {
 
           {checkedOutCarts.map((cart) => (
             <div key={cart.id}>
-              <Typography variant="h6">Order ID: {cart.id}</Typography>
-
+              <Link to={`/vieworder/${cart.id}`}>
+                <Typography variant="h6">Order ID: {cart.id}</Typography>
+              </Link>
               <Typography variant="body1">
                 Order made on: {cart.updatedAt}
               </Typography>
