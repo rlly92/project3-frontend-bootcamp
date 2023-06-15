@@ -48,7 +48,7 @@ const ItemListing = () => {
     if (listingID !== params) {
       setListingID(params);
     }
-  }, []);
+  }, [listingID, params]);
 
   // WRITE LOGIC TO CALL BACKEND FOR GETTING OUT THIS LISTING:
   useEffect(() => {

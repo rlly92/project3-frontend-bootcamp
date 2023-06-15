@@ -109,7 +109,7 @@ const CreateListing = () => {
       };
       checkUserInfoExists();
     }
-  }, [user?.email, accessToken, isAuthenticated]);
+  }, [user?.email, accessToken, isAuthenticated, user]);
 
   console.log("state.user_id:", state.user_id);
 
